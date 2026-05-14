@@ -26,6 +26,8 @@ import { TransactionModule } from './modules/transaction/transaction.module';
         autoLoadEntities: true,
         synchronize: false,
         logging: process.env.NODE_ENV === 'development',
+        migrationsRun: true,
+        migrations: [__dirname + '/database/migrations/**/*{.ts,.js}'],
       }),
     }),
     CurrencyModule,
