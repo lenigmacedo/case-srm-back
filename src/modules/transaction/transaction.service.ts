@@ -11,14 +11,14 @@ import { CurrencyService } from '../currency/currency.service';
 import { SimulateTransactionDto } from './dto/simulate-transaction.dto';
 import { LiquidateTransactionDto } from './dto/liquidate-transaction.dto';
 import { StatementFilterDto } from './dto/statement-filter.dto';
+import { TransactionRepository } from './transaction.repository';
 
 @Injectable()
 export class TransactionService {
   constructor(
-    @InjectRepository(Transaction)
-    private readonly transactionRepository: Repository<Transaction>,
     @InjectRepository(ReceivableType)
     private readonly receivableTypeRepository: Repository<ReceivableType>,
+    private readonly transactionRepository: TransactionRepository,
     private readonly pricingFactory: PricingFactory,
     private readonly currencyService: CurrencyService,
     private readonly configService: ConfigService,
@@ -139,37 +139,6 @@ export class TransactionService {
   }
 
   async getStatement(filter: StatementFilterDto) {
-    const page = filter.page ?? 1;
-    const limit = filter.limit ?? 20;
-
-    const query = this.transactionRepository
-      .createQueryBuilder('t')
-      .leftJoinAndSelect('t.cedente', 'c')
-      .leftJoinAndSelect('t.receivable_type', 'rt');
-
-    if (filter.cedente_id) {
-      query.andWhere('t.cedente_id = :cedenteId', {
-        cedenteId: filter.cedente_id,
-      });
-    }
-    if (filter.currency) {
-      query.andWhere('t.payment_currency = :currency', {
-        currency: filter.currency.toUpperCase(),
-      });
-    }
-    if (filter.from) {
-      query.andWhere('t.created_at >= :from', { from: filter.from });
-    }
-    if (filter.to) {
-      query.andWhere('t.created_at <= :to', { to: filter.to });
-    }
-
-    query
-      .orderBy('t.created_at', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit);
-
-    const [items, total] = await query.getManyAndCount();
-    return { items, total, page, limit, pages: Math.ceil(total / limit) };
+    return this.transactionRepository.getStatement(filter);
   }
 }
