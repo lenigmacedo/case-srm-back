@@ -3,6 +3,7 @@ import {
   IsDateString,
   IsInt,
   IsNumberString,
+  IsOptional,
   IsString,
   IsUUID,
   Min,
@@ -32,6 +33,7 @@ export class SimulateTransactionDto {
     description: 'Moeda original do título',
   })
   @IsString()
+  @IsOptional()
   origin_currency?: string;
 
   @ApiPropertyOptional({
@@ -40,5 +42,6 @@ export class SimulateTransactionDto {
     description: 'Moeda de pagamento desejada',
   })
   @IsString()
+  @IsOptional()
   payment_currency?: string;
 }
