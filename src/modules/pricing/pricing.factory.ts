@@ -1,22 +1,11 @@
-import { Injectable, UnprocessableEntityException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { ReceivableType } from '../receivable-type/entities/receivable-type.entity';
 import { IPricingStrategy } from './interfaces/pricing-strategy.interface';
-import { DuplicataMercantilStrategy } from './strategies/duplicata-mercantil.strategy';
-import { ChequePreDatadoStrategy } from './strategies/cheque-pre-datado.strategy';
+import { SpreadPricingStrategy } from './strategies/spread-pricing.strategy';
 
 @Injectable()
 export class PricingFactory {
-  private readonly strategies = new Map<string, IPricingStrategy>([
-    ['DUPLICATA_MERCANTIL', new DuplicataMercantilStrategy()],
-    ['CHEQUE_PRE_DATADO', new ChequePreDatadoStrategy()],
-  ]);
-
-  getStrategy(receivableTypeCode: string): IPricingStrategy {
-    const strategy = this.strategies.get(receivableTypeCode);
-    if (!strategy) {
-      throw new UnprocessableEntityException(
-        `No pricing strategy found for receivable type: ${receivableTypeCode}`,
-      );
-    }
-    return strategy;
+  getStrategy(receivableType: ReceivableType): IPricingStrategy {
+    return new SpreadPricingStrategy(receivableType.spread_monthly);
   }
 }

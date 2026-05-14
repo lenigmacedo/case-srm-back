@@ -5,8 +5,12 @@ import {
   PricingResult,
 } from '../interfaces/pricing-strategy.interface';
 
-export abstract class AbstractPricingStrategy implements IPricingStrategy {
-  abstract readonly spreadMonthly: Decimal;
+export class SpreadPricingStrategy implements IPricingStrategy {
+  readonly spreadMonthly: Decimal;
+
+  constructor(spreadMonthly: string) {
+    this.spreadMonthly = new Decimal(spreadMonthly);
+  }
 
   calculate(params: PricingParams): PricingResult {
     const faceValue = new Decimal(params.faceValue);

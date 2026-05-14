@@ -38,7 +38,7 @@ export class TransactionService {
         `ReceivableType ${dto.receivable_type_id} not found`,
       );
 
-    const strategy = this.pricingFactory.getStrategy(receivableType.code);
+    const strategy = this.pricingFactory.getStrategy(receivableType);
     const baseRate = this.getBaseRate();
     const pricing = strategy.calculate({
       faceValue: dto.face_value,
@@ -94,7 +94,7 @@ export class TransactionService {
           `ReceivableType ${dto.receivable_type_id} not found`,
         );
 
-      const strategy = this.pricingFactory.getStrategy(receivableType.code);
+      const strategy = this.pricingFactory.getStrategy(receivableType);
       const baseRate = this.getBaseRate();
       const pricing = strategy.calculate({
         faceValue: dto.face_value,
