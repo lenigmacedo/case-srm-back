@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import databaseConfig from './config/database.config';
+import { ObservabilityModule } from './common/observability.module';
 import { CurrencyModule } from './modules/currency/currency.module';
 import { CedenteModule } from './modules/cedente/cedente.module';
 import { ReceivableTypeModule } from './modules/receivable-type/receivable-type.module';
@@ -30,6 +31,7 @@ import { TransactionModule } from './modules/transaction/transaction.module';
         migrations: [__dirname + '/database/migrations/**/*{.ts,.js}'],
       }),
     }),
+    ObservabilityModule,
     CurrencyModule,
     CedenteModule,
     ReceivableTypeModule,

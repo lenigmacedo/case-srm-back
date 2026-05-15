@@ -4,30 +4,35 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
-  Logger,
+  Injectable,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { randomUUID } from 'crypto';
 import { QueryFailedError } from 'typeorm';
+import { AppLogger } from '../logger/app-logger.service';
 
+@Injectable()
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
-  private readonly logger = new Logger(AllExceptionsFilter.name);
+  constructor(private readonly logger: AppLogger) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const traceId = (request.headers['x-request-id'] as string) ?? randomUUID();
+    const traceId =
+      (request.headers['x-request-id'] as string | undefined) ?? randomUUID();
 
     const { statusCode, error, message } = this.resolve(exception);
 
     if (statusCode >= 500) {
-      this.logger.error(
-        `[${traceId}] ${request.method} ${request.url} → ${statusCode}`,
-        exception instanceof Error ? exception.stack : String(exception),
-      );
+      this.logger.error('unhandled_exception', {
+        method: request.method,
+        url: request.url,
+        statusCode,
+        stack: exception instanceof Error ? exception.stack : String(exception),
+      });
     }
 
     response.status(statusCode).json({
@@ -48,12 +53,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       const statusCode = exception.getStatus();
       const res = exception.getResponse();
-
       const message =
         typeof res === 'object' && res !== null && 'message' in res
           ? (res as Record<string, unknown>).message
           : exception.message;
-
       return {
         statusCode,
         error: HttpStatus[statusCode] ?? 'HTTP_EXCEPTION',
