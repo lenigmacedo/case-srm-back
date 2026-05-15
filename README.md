@@ -4,6 +4,22 @@ API RESTful para precificação e liquidação de recebíveis multimoedas, const
 
 ---
 
+## Demo em produção
+
+A stack completa está rodando na Oracle Cloud Free Tier (ARM Ampere A1). Sem necessidade de rodar localmente para avaliar.
+
+| Serviço | URL | Credenciais |
+|---|---|---|
+| Frontend | http://140.238.178.68 | — |
+| API (Swagger) | http://140.238.178.68:3000/api/docs | — |
+| Health | http://140.238.178.68:3000/health | — |
+| Métricas (Prometheus) | http://140.238.178.68:3000/metrics | — |
+| Prometheus | http://140.238.178.68:9090 | — |
+| Grafana | http://140.238.178.68:3001 | admin / admin |
+| pgAdmin | http://140.238.178.68:5050 | admin@srmasset.com / admin |
+
+---
+
 ## Sumário
 
 - [Stack](#stack)
@@ -98,6 +114,7 @@ yarn start:dev
 | `DB_PASSWORD` | `srm_pass` | Senha do banco |
 | `FRONT_URL` | — | URL do frontend (CORS) |
 | `BASE_RATE_MONTHLY` | `0.01` | Taxa base mensal (1% a.m.) usada nos cálculos |
+| `VITE_API_URL` | `http://localhost:3000` | URL da API consumida pelo frontend (baked em build time pelo Vite) |
 
 ---
 
