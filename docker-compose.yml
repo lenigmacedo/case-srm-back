@@ -45,6 +45,19 @@ services:
       postgres:
         condition: service_healthy
 
+  frontend:
+    build:
+      context: ../case-srm-front
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+    container_name: srm_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
   prometheus:
     image: prom/prometheus:latest
     container_name: srm_prometheus
