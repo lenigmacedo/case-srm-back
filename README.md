@@ -14,6 +14,7 @@ API RESTful para precificação e liquidação de recebíveis multimoedas, const
 - [Migrations e seed](#migrations-e-seed)
 - [Endpoints](#endpoints)
 - [Arquitetura e decisões de design](#arquitetura-e-decisões-de-design)
+- [Diagramas C4](#diagramas-c4)
 - [Diagrama ER](#diagrama-er)
 - [Scripts DDL](#scripts-ddl)
 - [Testes](#testes)
@@ -227,53 +228,16 @@ Erros 5xx são logados com stack trace; erros 4xx são silenciosos.
 
 ---
 
+## Diagramas C4
+
+- [Nível 1 — Contexto](docs/c4-context.md)
+- [Nível 2 — Containers](docs/c4-container.md)
+
+---
+
 ## Diagrama ER
 
-```
-currencies
-──────────────────────────────
-id          UUID PK
-code        VARCHAR(10) UNIQUE    ← 'BRL', 'USD', 'EUR'
-name        VARCHAR(50)
-rate_to_brl NUMERIC(20,6)
-updated_at  TIMESTAMPTZ
-
-receivable_types
-──────────────────────────────
-id             UUID PK
-code           VARCHAR(50) UNIQUE  ← 'DUPLICATA_MERCANTIL'
-name           VARCHAR(100)
-spread_monthly NUMERIC(20,6)       ← 0.015000 = 1,5% a.m.
-
-cedentes
-──────────────────────────────
-id        UUID PK
-cnpj      VARCHAR(14) UNIQUE
-name      VARCHAR(150)
-risk_tier ENUM(LOW, MEDIUM, HIGH)
-
-transactions
-──────────────────────────────
-id                 UUID PK
-face_value         NUMERIC(20,6)
-present_value      NUMERIC(20,6)
-discount_amount    NUMERIC(20,6)
-discount_rate      NUMERIC(20,6)
-term_days          INT
-due_date           DATE
-base_rate_monthly  NUMERIC(20,6)
-payment_currency   VARCHAR(10)
-origin_currency    VARCHAR(10)
-fx_rate            NUMERIC(20,6) nullable
-status             ENUM(PENDING, LIQUIDATED, CANCELLED)
-cedente_id         UUID FK → cedentes.id
-receivable_type_id UUID FK → receivable_types.id
-version            INT              ← Optimistic Locking
-created_at         TIMESTAMPTZ
-updated_at         TIMESTAMPTZ
-
-INDEX: (cedente_id, payment_currency, created_at DESC)
-```
+[Ver diagrama ER](docs/er-diagram.md)
 
 ---
 
