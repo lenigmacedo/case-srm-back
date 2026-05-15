@@ -6,10 +6,11 @@ import { TransactionService } from './transaction.service';
 import { TransactionController } from './transaction.controller';
 import { PricingModule } from '../pricing/pricing.module';
 import { CurrencyModule } from '../currency/currency.module';
+import { Transaction } from './entities/transaction.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ReceivableType]),
+    TypeOrmModule.forFeature([ReceivableType, Transaction]),
     PricingModule,
     CurrencyModule,
   ],
