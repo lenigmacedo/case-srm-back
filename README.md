@@ -14,8 +14,8 @@ API RESTful para precificação e liquidação de recebíveis multimoedas, const
 - [Migrations e seed](#migrations-e-seed)
 - [Endpoints](#endpoints)
 - [Arquitetura e decisões de design](#arquitetura-e-decisões-de-design)
-- [Diagramas C4](#diagramas-c4)
-- [Diagrama ER](#diagrama-er)
+- [Diagramas](#diagramas)
+- [ADRs](#adrs)
 - [Scripts DDL](#scripts-ddl)
 - [Testes](#testes)
 - [Git workflow](#git-workflow)
@@ -228,16 +228,26 @@ Erros 5xx são logados com stack trace; erros 4xx são silenciosos.
 
 ---
 
-## Diagramas C4
+## Diagramas
 
-- [Nível 1 — Contexto](docs/c4-context.md)
-- [Nível 2 — Containers](docs/c4-container.md)
+| Diagrama | Descrição |
+|---|---|
+| [C4 Nível 1 — Contexto](docs/c4-context.md) | Sistema no contexto de usuários e sistemas externos |
+| [C4 Nível 2 — Containers](docs/c4-container.md) | Containers que compõem o sistema e seus relacionamentos |
+| [ER](docs/er-diagram.md) | Entidades, atributos e relacionamentos do banco de dados |
+| [Sequence — Liquidação](docs/sequence-liquidation.md) | Fluxo completo de uma liquidação: ACID, Strategy e conversão cambial |
 
 ---
 
-## Diagrama ER
+## ADRs
 
-[Ver diagrama ER](docs/er-diagram.md)
+Decisões arquiteturais relevantes documentadas em `docs/adr/`:
+
+| ADR | Decisão |
+|---|---|
+| [001](docs/adr/001-decimal-js.md) | Uso de `decimal.js` para aritmética financeira em vez de `float` nativo |
+| [002](docs/adr/002-fx-rate-snapshot.md) | Snapshot de `fx_rate` na transação — sem FK para `currencies` |
+| [003](docs/adr/003-strategy-pattern-pricing.md) | Strategy Pattern com Factory para o Pricing Engine |
 
 ---
 
