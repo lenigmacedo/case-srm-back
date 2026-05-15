@@ -1,0 +1,27 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: deploy → oracle vm
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.ORACLE_VM_HOST }}
+          username: ${{ secrets.ORACLE_VM_USER }}
+          key: ${{ secrets.ORACLE_VM_SSH_KEY }}
+          script: |
+            set -e
+
+            cd ~/srm/case-srm-front && git pull origin main
+            cd ~/srm/case-srm-back  && git pull origin main
+
+            docker compose up -d --build --remove-orphans
+
+            docker image prune -f
