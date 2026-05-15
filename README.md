@@ -14,7 +14,8 @@ API RESTful para precificação e liquidação de recebíveis multimoedas, const
 - [Migrations e seed](#migrations-e-seed)
 - [Endpoints](#endpoints)
 - [Arquitetura e decisões de design](#arquitetura-e-decisões-de-design)
-- [Diagrama ER](#diagrama-er)
+- [Diagramas](#diagramas)
+- [ADRs](#adrs)
 - [Scripts DDL](#scripts-ddl)
 - [Testes](#testes)
 - [Git workflow](#git-workflow)
@@ -227,53 +228,26 @@ Erros 5xx são logados com stack trace; erros 4xx são silenciosos.
 
 ---
 
-## Diagrama ER
+## Diagramas
 
-```
-currencies
-──────────────────────────────
-id          UUID PK
-code        VARCHAR(10) UNIQUE    ← 'BRL', 'USD', 'EUR'
-name        VARCHAR(50)
-rate_to_brl NUMERIC(20,6)
-updated_at  TIMESTAMPTZ
+| Diagrama | Descrição |
+|---|---|
+| [C4 Nível 1 — Contexto](docs/c4-context.md) | Sistema no contexto de usuários e sistemas externos |
+| [C4 Nível 2 — Containers](docs/c4-container.md) | Containers que compõem o sistema e seus relacionamentos |
+| [ER](docs/er-diagram.md) | Entidades, atributos e relacionamentos do banco de dados |
+| [Sequence — Liquidação](docs/sequence-liquidation.md) | Fluxo completo de uma liquidação: ACID, Strategy e conversão cambial |
 
-receivable_types
-──────────────────────────────
-id             UUID PK
-code           VARCHAR(50) UNIQUE  ← 'DUPLICATA_MERCANTIL'
-name           VARCHAR(100)
-spread_monthly NUMERIC(20,6)       ← 0.015000 = 1,5% a.m.
+---
 
-cedentes
-──────────────────────────────
-id        UUID PK
-cnpj      VARCHAR(14) UNIQUE
-name      VARCHAR(150)
-risk_tier ENUM(LOW, MEDIUM, HIGH)
+## ADRs
 
-transactions
-──────────────────────────────
-id                 UUID PK
-face_value         NUMERIC(20,6)
-present_value      NUMERIC(20,6)
-discount_amount    NUMERIC(20,6)
-discount_rate      NUMERIC(20,6)
-term_days          INT
-due_date           DATE
-base_rate_monthly  NUMERIC(20,6)
-payment_currency   VARCHAR(10)
-origin_currency    VARCHAR(10)
-fx_rate            NUMERIC(20,6) nullable
-status             ENUM(PENDING, LIQUIDATED, CANCELLED)
-cedente_id         UUID FK → cedentes.id
-receivable_type_id UUID FK → receivable_types.id
-version            INT              ← Optimistic Locking
-created_at         TIMESTAMPTZ
-updated_at         TIMESTAMPTZ
+Decisões arquiteturais relevantes documentadas em `docs/adr/`:
 
-INDEX: (cedente_id, payment_currency, created_at DESC)
-```
+| ADR | Decisão |
+|---|---|
+| [001](docs/adr/001-decimal-js.md) | Uso de `decimal.js` para aritmética financeira em vez de `float` nativo |
+| [002](docs/adr/002-fx-rate-snapshot.md) | Snapshot de `fx_rate` na transação — sem FK para `currencies` |
+| [003](docs/adr/003-strategy-pattern-pricing.md) | Strategy Pattern com Factory para o Pricing Engine |
 
 ---
 
