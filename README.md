@@ -1,98 +1,329 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# SRM Credit Engine — Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API RESTful para precificação e liquidação de recebíveis multimoedas, construída com **NestJS + TypeScript + PostgreSQL**.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## Sumário
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- [Stack](#stack)
+- [Como rodar](#como-rodar)
+  - [Com Docker Compose (recomendado)](#com-docker-compose-recomendado)
+  - [Sem Docker (Node local)](#sem-docker-node-local)
+- [Variáveis de ambiente](#variáveis-de-ambiente)
+- [Migrations e seed](#migrations-e-seed)
+- [Endpoints](#endpoints)
+- [Arquitetura e decisões de design](#arquitetura-e-decisões-de-design)
+- [Diagrama ER](#diagrama-er)
+- [Scripts DDL](#scripts-ddl)
+- [Testes](#testes)
+- [Git workflow](#git-workflow)
 
-## Project setup
+---
+
+## Stack
+
+| Camada | Tecnologia | Justificativa |
+|---|---|---|
+| Framework | NestJS 11 + TypeScript | Tipagem forte, IoC nativo, decorators para validação e Swagger automático |
+| Banco de dados | PostgreSQL 16 | ACID, suporte nativo a `NUMERIC` para precisão decimal financeira |
+| ORM / QueryBuilder | TypeORM 0.3 | Migrations versionadas, `@VersionColumn` para Optimistic Locking, QueryBuilder para relatórios analíticos |
+| Precisão numérica | `decimal.js` | Aritmética de ponto flutuante segura |
+| Validação | `class-validator` + `class-transformer` | Whitelist de campos, rejeição de payloads desconhecidos, mensagens de erro tipadas |
+| Documentação | `@nestjs/swagger` | OpenAPI gerada automaticamente a partir dos DTOs |
+| Containers | Docker + Docker Compose | Ambiente reproduzível com health check no PostgreSQL |
+| Qualidade | ESLint + Prettier + Husky + commitlint | Lint e formatação antes de cada commit; mensagens em Conventional Commits |
+
+---
+
+## Como rodar
+
+### Com Docker Compose (recomendado)
+
+Requer: **Docker** e **Docker Compose** instalados.
+
+O `docker-compose.yml` sobe três serviços: **postgres**, **pgadmin** e **backend**.
 
 ```bash
-$ yarn install
+# 1. Clone o repositório
+git clone <url-do-repo>
+cd case-srm-back
+
+# 2. Crie o arquivo de ambiente
+cp .env.example .env
+# os valores padrão já funcionam com o compose
+
+# 3. Suba os containers
+docker compose up --build -d
+
 ```
 
-## Compile and run the project
+| Serviço | URL |
+|---|---|
+| API | http://localhost:3000 |
+| Swagger | http://localhost:3000/api/docs |
+| pgAdmin | http://localhost:5050 (admin@srmasset.com / admin) |
+
+---
+
+### Sem Docker (Node local)
+
+Requer: **Node.js 20+**, **Yarn** e uma instância PostgreSQL rodando localmente.
 
 ```bash
-# development
-$ yarn run start
+# 1. Instale as dependências
+yarn install
 
-# watch mode
-$ yarn run start:dev
+# 2. Configure o ambiente
+cp .env.example .env
+# ajuste DB_HOST, DB_USER, DB_PASSWORD conforme sua instância
 
-# production mode
-$ yarn run start:prod
+# 3. Inicie em modo watch
+yarn start:dev
 ```
 
-## Run tests
+---
+
+## Variáveis de ambiente
+
+| Variável | Padrão | Descrição |
+|---|---|---|
+| `NODE_ENV` | `development` | Ambiente de execução |
+| `PORT` | `3000` | Porta HTTP do servidor |
+| `DB_HOST` | `localhost` | Host do PostgreSQL |
+| `DB_PORT` | `5432` | Porta do PostgreSQL |
+| `DB_NAME` | `srm_db` | Nome do banco |
+| `DB_USER` | `srm_user` | Usuário do banco |
+| `DB_PASSWORD` | `srm_pass` | Senha do banco |
+| `FRONT_URL` | — | URL do frontend (CORS) |
+| `BASE_RATE_MONTHLY` | `0.01` | Taxa base mensal (1% a.m.) usada nos cálculos |
+
+---
+
+## Migrations e seed
+
+As migrations estão em `src/database/migrations/` e são executadas em ordem numérica:
+
+| # | Migration | O que cria |
+|---|---|---|
+| 1 | `CreateCurrencies` | Tabela `currencies` com `NUMERIC(20,6)` |
+| 2 | `CreateReceivableTypes` | Tabela `receivable_types` com spread mensal |
+| 3 | `CreateCedentes` | Tabela `cedentes` com CNPJ único e `risk_tier` |
+| 4 | `CreateTransactions` | Tabela `transactions` com `@VersionColumn`, enum de status e índice composto em `(cedente_id, payment_currency, created_at DESC)` |
+| 5 | `SeedInitialData` | Insere BRL/USD/EUR e os tipos Duplicata Mercantil (1,5% a.m.) e Cheque Pré-datado (2,5% a.m.) |
+
+```bash
+yarn migration:run      # aplica todas as migrations pendentes
+yarn migration:revert   # reverte a última migration
+```
+
+---
+
+## Endpoints
+
+### Transactions
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `POST` | `/transactions/simulate` | Calcula VP e deságio sem persistir |
+| `POST` | `/transactions/liquidate` | Registra a liquidação em transação ACID |
+| `GET` | `/transactions/statement` | Extrato paginado com filtros server-side |
+
+**Query params de `/transactions/statement`:**
+
+```
+?cedente_id=<uuid>
+&currency=USD
+&from=2025-01-01
+&to=2025-12-31
+&page=1
+&limit=20
+```
+
+### Currencies
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/currencies` | Lista todas as moedas e taxas |
+| `PUT` | `/currencies/:code/rate` | Atualiza a taxa de câmbio e invalida o cache |
+
+### Cedentes
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/cedentes` | Lista todos os cedentes |
+| `GET` | `/cedentes/:id` | Busca um cedente por ID |
+| `POST` | `/cedentes` | Cria um cedente (CNPJ único, 14 dígitos) |
+
+### Receivable Types
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/receivable-types` | Lista todos os tipos de recebível |
+| `GET` | `/receivable-types/:id` | Busca um tipo por ID |
+| `POST` | `/receivable-types` | Cria um novo tipo com spread mensal personalizado |
+
+**Documentação completa com exemplos:** `http://localhost:3000/api/docs`
+
+---
+
+## Arquitetura e decisões de design
+
+### Separação em camadas
+
+```
+Controller  →  Service  →  Repository / ORM
+   (HTTP)     (negócio)     (persistência)
+```
+
+O extrato segue o mesmo fluxo de três camadas — `TransactionController → TransactionService → TransactionRepository` — mas o `getStatement` no Service é um repasse direto ao repositório, sem lógica de negócio adicional.
+
+### Strategy Pattern — Pricing Engine
+
+O cálculo de deságio é desacoplado via interface `IPricingStrategy`:
+
+```
+IPricingStrategy
+    └── SpreadPricingStrategy(spreadMonthly)
+            PV = FV / (1 + baseRate + spread) ^ (termDays / 30)
+```
+
+A `PricingFactory` recebe um `ReceivableType` e retorna a estratégia correta. Adicionar um novo tipo de recebível não exige alteração na lógica de cálculo — apenas um novo registro no banco ou uma nova implementação de estratégia.
+
+### Precisão decimal
+
+Todos os valores financeiros usam `decimal.js` nos cálculos e `NUMERIC(20, 6)` no banco. Nunca `float` nativo, que acumula erros de representação binária em operações financeiras.
+
+### ACID e Optimistic Locking
+
+A liquidação envolve a leitura de cedente e tipo de recebível, cálculo e persistência da transação — tudo dentro de um único `DataSource.transaction()`. Isso garante atomicidade.
+
+A entidade `Transaction` possui `@VersionColumn()` (campo `version`): o TypeORM incrementa automaticamente e lança `OptimisticLockVersionMismatch` em caso de escrita concorrente sobre o mesmo registro, evitando race conditions.
+
+### Currency Engine com cache em memória
+
+O `CurrencyService` mantém um `Map<string, Decimal>` carregado no `onModuleInit`. A taxa só vai ao banco quando não está no cache ou após atualização via `PUT /currencies/:code/rate`. Evita round-trips desnecessários ao banco em cada cálculo.
+
+### Query Builder para relatórios analíticos
+
+O extrato de liquidações usa `createQueryBuilder` com filtros dinâmicos e paginação via `.skip().take()`, ao invés de carregar toda a tabela e filtrar em memória. O índice composto `(cedente_id, payment_currency, created_at DESC)` acelera as consultas mais comuns.
+
+### Global Exception Filter
+
+`AllExceptionsFilter` intercepta todas as exceções (HTTP, TypeORM `QueryFailedError`, erros inesperados) e responde com envelope padronizado:
+
+```json
+{
+  "statusCode": 422,
+  "error": "DATABASE_ERROR",
+  "message": "A database operation failed.",
+  "traceId": "uuid-gerado-por-request",
+  "path": "/transactions/liquidate",
+  "timestamp": "2025-01-01T00:00:00.000Z"
+}
+```
+
+Erros 5xx são logados com stack trace; erros 4xx são silenciosos.
+
+---
+
+## Diagrama ER
+
+```
+currencies
+──────────────────────────────
+id          UUID PK
+code        VARCHAR(10) UNIQUE    ← 'BRL', 'USD', 'EUR'
+name        VARCHAR(50)
+rate_to_brl NUMERIC(20,6)
+updated_at  TIMESTAMPTZ
+
+receivable_types
+──────────────────────────────
+id             UUID PK
+code           VARCHAR(50) UNIQUE  ← 'DUPLICATA_MERCANTIL'
+name           VARCHAR(100)
+spread_monthly NUMERIC(20,6)       ← 0.015000 = 1,5% a.m.
+
+cedentes
+──────────────────────────────
+id        UUID PK
+cnpj      VARCHAR(14) UNIQUE
+name      VARCHAR(150)
+risk_tier ENUM(LOW, MEDIUM, HIGH)
+
+transactions
+──────────────────────────────
+id                 UUID PK
+face_value         NUMERIC(20,6)
+present_value      NUMERIC(20,6)
+discount_amount    NUMERIC(20,6)
+discount_rate      NUMERIC(20,6)
+term_days          INT
+due_date           DATE
+base_rate_monthly  NUMERIC(20,6)
+payment_currency   VARCHAR(10)
+origin_currency    VARCHAR(10)
+fx_rate            NUMERIC(20,6) nullable
+status             ENUM(PENDING, LIQUIDATED, CANCELLED)
+cedente_id         UUID FK → cedentes.id
+receivable_type_id UUID FK → receivable_types.id
+version            INT              ← Optimistic Locking
+created_at         TIMESTAMPTZ
+updated_at         TIMESTAMPTZ
+
+INDEX: (cedente_id, payment_currency, created_at DESC)
+```
+
+---
+
+## Scripts DDL
+
+O DDL completo está nas migrations em `src/database/migrations/`. Para inspecionar:
+
+```bash
+# ver todas as migrations disponíveis
+ls src/database/migrations/
+```
+
+Ou acesse o pgAdmin em `http://localhost:5050` após o compose subir.
+
+---
+
+## Testes
 
 ```bash
 # unit tests
-$ yarn run test
+yarn test
 
-# e2e tests
-$ yarn run test:e2e
+# com cobertura
+yarn test:cov
 
-# test coverage
-$ yarn run test:cov
+# modo watch
+yarn test:watch
 ```
 
-## Deployment
+Os testes unitários cobrem a `SpreadPricingStrategy`:
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- Cálculo de VP para 30 e 60 dias
+- Relação VP < face_value (deságio sempre positivo)
+- Comparação entre spreads (maior spread → maior deságio)
+- Cálculo do `discount_rate` como proporção do face_value
+- Precisão com valores grandes (R$ 999.999.999,99)
+- Edge case: `termDays = 0` → VP = face_value
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+---
 
-```bash
-$ yarn install -g @nestjs/mau
-$ mau deploy
-```
+## Git workflow
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+O projeto segue **GitHub Flow**: branches de feature mergeadas via Pull Request na `main`.
 
-## Resources
+Hooks configurados com Husky:
 
-Check out a few resources that may come in handy when working with NestJS:
+| Hook | O que faz |
+|---|---|
+| `pre-commit` | ESLint + Prettier via `lint-staged` |
+| `commit-msg` | `commitlint` exige Conventional Commits |
+| `pre-push` | Roda a suíte de testes unitários |
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Padrão de commits: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`
