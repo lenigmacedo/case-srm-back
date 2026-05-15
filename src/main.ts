@@ -17,6 +17,10 @@ async function bootstrap() {
     }),
   );
 
+  app.enableCors({
+    origin: process.env.FRONT_URL,
+  });
+
   const swaggerConfig = new DocumentBuilder()
     .setTitle('SRM Credit Engine')
     .setDescription('Plataforma de cessão de crédito multimoedas')
@@ -28,4 +32,4 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3000);
 }
-bootstrap();
+void bootstrap();
